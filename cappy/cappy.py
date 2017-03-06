@@ -1,15 +1,17 @@
-# Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
-
 import BaseHTTPServer
 import errno
 import os
 import sys
+import tempfile
+
 from urlparse import urlparse, ParseResult
+
 import fire
 import requests
+
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-import tempfile
+
 
 
 def log(*args):
@@ -52,6 +54,7 @@ def split_path(path):
 
 
 class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    # Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
     def get_cache(self, parsed_url, url):
         cachepath = '{}{}'.format(parsed_url.netloc, parsed_url.path)
         dirpath, filepath = split_path(cachepath)
@@ -108,10 +111,13 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 class CacheProxy(object):
     def run(self, port=3030, cache_dir=CACHE_DIR):
         global CACHE_DIR
+
         if cache_dir:
             CACHE_DIR = cache_dir
+
         if not os.path.isdir(CACHE_DIR):
             make_dirs(CACHE_DIR)
+
         server_address = ('', port)
         httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
         log("Server started on port: {}".format(port))

@@ -12,5 +12,5 @@ CAchingProxyinPython is a file based python proxy based on Sharebear's
 ```cappy run```
 
 ### Options
-```--port``` - optional (default: 3030)
-```--cache_dir``` - optional (default: Temporary platform specific folder)
+- ```--port``` - optional (default: 3030)
+- ```--cache_dir``` - optional (default: Temporary platform specific folder)
