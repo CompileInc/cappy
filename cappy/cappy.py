@@ -9,6 +9,7 @@ import fire
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+import tempfile
 
 
 def log(*args):
@@ -17,7 +18,7 @@ def log(*args):
     sys.stdout.write(message+"\n")
     sys.stdout.flush()
 
-CACHED_DIR = os.path.join(os.getcwd(), '../cached')
+CACHE_DIR = tempfile.gettempdir()
 
 
 def make_dirs(path):
@@ -57,7 +58,7 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         data = None
         if not filepath:
             filepath = 'index.html'
-        cache_file = os.path.join(CACHED_DIR, dirpath, filepath)
+        cache_file = os.path.join(CACHE_DIR, dirpath, filepath)
         if os.path.exists(cache_file):
             log("Cache hit")
             file_obj = open(cache_file, 'rb')
@@ -105,13 +106,18 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 class CacheProxy(object):
-    def run(self, port=3030):
-        if not os.path.isdir(CACHED_DIR):
-            os.mkdir(CACHED_DIR)
+    def run(self, port=3030, cache_dir=CACHE_DIR):
+        global CACHE_DIR
+        if cache_dir:
+            CACHE_DIR = cache_dir
+        if not os.path.isdir(CACHE_DIR):
+            make_dirs(CACHE_DIR)
         server_address = ('', port)
         httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
-        log("server started on port {}".format(port))
+        log("Server started on port: {}".format(port))
+        log("Files cached at: {}".format(CACHE_DIR))
         httpd.serve_forever()
+
 
 def cli():
     fire.Fire(CacheProxy)
