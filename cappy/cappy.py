@@ -5,6 +5,7 @@ import errno
 import os
 import sys
 from urlparse import urlparse, ParseResult
+import fire
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -90,7 +91,6 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                              fragment=parsed_url.fragment)
         return result
 
-
     def do_GET(self):
         # cappy expects the urls to be well formed.
         # Relative urls must be handled by the application
@@ -104,13 +104,15 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.writelines(data)
 
 
-def run():
-    if not os.path.isdir(CACHED_DIR):
-        os.mkdir(CACHED_DIR)
-    server_address = ('', 3030)
-    httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
-    log("server started")
-    httpd.serve_forever()
+class CacheProxy(object):
+    def run(self, port=3030):
+        if not os.path.isdir(CACHED_DIR):
+            os.mkdir(CACHED_DIR)
+        server_address = ('', port)
+        httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
+        log("server started on port {}".format(port))
+        httpd.serve_forever()
+
 
 if __name__ == '__main__':
-    run()
+    fire.Fire(CacheProxy)
