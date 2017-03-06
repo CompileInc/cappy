@@ -113,6 +113,9 @@ class CacheProxy(object):
         log("server started on port {}".format(port))
         httpd.serve_forever()
 
+def cli():
+    fire.Fire(CacheProxy)
 
 if __name__ == '__main__':
-    fire.Fire(CacheProxy)
+    cli()
+

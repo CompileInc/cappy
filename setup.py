@@ -14,19 +14,19 @@ except ImportError:
 install_reqs = parse_requirements('requirements.txt', session=PipSession())
 reqs = [str(ir.req) for ir in install_reqs]
 sys.path.insert(0, os.path.dirname(__file__))
+version = '0.1'
 setup(
     name='cappy',
-    version='0.1',
+    version=version,
     packages=find_packages(),
     install_requires=reqs,
-    long_description="CAchingProxyinPython is a file based python proxy based on Sharebear's
-    simple python caching proxy",
+    long_description="CAchingProxyinPython is a file based python proxy based on Sharebear's simple python caching proxy",
     description='A simple file based python poxy',
     keywords = ['cappy', 'proxy', 'http'],
     url='https://github.com/CompileInc/cappy',
     download_url = 'https://github.com/CompileInc/cappy/archive/v{version}.tar.gz'.format(version=version),
     entry_points='''
         [console_scripts]
-        cappy=cappy:cli
+        cappy=cappy.cappy:cli
     '''
 )

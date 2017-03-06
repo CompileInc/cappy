@@ -6,7 +6,7 @@ CAchingProxyinPython is a file based python proxy based on Sharebear's
 
 ## Usage
 
-```python cappy/cappy.py run```
+```cappy run```
 
 ### Options
 ```--port``` - optional (default: 3030)
