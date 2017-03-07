@@ -14,7 +14,7 @@ except ImportError:
 install_reqs = parse_requirements('requirements.txt', session=PipSession())
 reqs = [str(ir.req) for ir in install_reqs]
 sys.path.insert(0, os.path.dirname(__file__))
-version = '0.1.1'
+version = '0.2'
 setup(
     name='cappy',
     version=version,
@@ -25,6 +25,8 @@ setup(
     keywords = ['cappy', 'proxy', 'http'],
     url='https://github.com/CompileInc/cappy',
     download_url = 'https://github.com/CompileInc/cappy/archive/v{version}.tar.gz'.format(version=version),
+    author='Compile Inc',
+    author_email='dev@compile.com',
     entry_points='''
         [console_scripts]
         cappy=cappy.cappy:cli
