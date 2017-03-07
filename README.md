@@ -14,3 +14,5 @@ CAchingProxyinPython is a file based python proxy based on Sharebear's
 ### Options
 - ```--port``` - optional (default: 3030)
 - ```--cache_dir``` - optional (default: Temporary platform specific folder)
+- ```--cache_timeout``` - optional (default: 864000 seconds, use 0 for caching indefinitely)
+
