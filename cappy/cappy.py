@@ -3,6 +3,7 @@
 import BaseHTTPServer
 import datetime
 import errno
+import gzip
 import os
 import sys
 import tempfile
@@ -17,8 +18,6 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-
-
 def log(*args):
     message = "".join(args)
     message = "[CAPPY] " + message
@@ -26,7 +25,12 @@ def log(*args):
     sys.stdout.flush()
 
 CACHE_DIR = tempfile.gettempdir()
+CACHE_DIR_NAMESPACE = "cappy"
 CACHE_TIMEOUT = 60 * 60 * 24
+CACHE_COMPRESS = False
+
+def get_cache_dir(cache_dir):
+    return os.path.join(cache_dir, CACHE_DIR_NAMESPACE)
 
 
 def make_dirs(path):
@@ -69,7 +73,7 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not filepath:
             filepath = 'index.html'
 
-        cache_file = os.path.join(CACHE_DIR, dirpath, filepath)
+        cache_file = os.path.join(get_cache_dir(CACHE_DIR), dirpath, filepath)
 
         hit = False
         if os.path.exists(cache_file):
@@ -82,10 +86,12 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 if valid_till > now:
                     hit = True
+        
+        fopen = gzip.open if CACHE_COMPRESS else open
 
         if hit:
             log("Cache hit")
-            file_obj = open(cache_file, 'rb')
+            file_obj = fopen(cache_file, 'rb')
             data = file_obj.readlines()
             file_obj.close()
         else:
@@ -94,7 +100,7 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # make dirs before you write to file
             dirname, _filename = split_path(cache_file)
             make_dirs(dirname)
-            file_obj = open(cache_file, 'wb+')
+            file_obj = fopen(cache_file, 'wb+')
             file_obj.writelines(data)
             file_obj.close()
         return data
@@ -132,23 +138,29 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 class CacheProxy(object):
     def run(self, port=3030,
             cache_dir=CACHE_DIR,
-            cache_timeout=CACHE_TIMEOUT):
+            cache_timeout=CACHE_TIMEOUT,
+            cache_compress=CACHE_COMPRESS):
         global CACHE_DIR
         global CACHE_TIMEOUT
+        global CACHE_COMPRESS
 
         if cache_dir:
             CACHE_DIR = cache_dir
 
+        CACHE_COMPRESS = cache_compress
         CACHE_TIMEOUT = cache_timeout
 
         if not os.path.isdir(CACHE_DIR):
-            make_dirs(CACHE_DIR)
+            make_dirs(get_cache_dir(CACHE_DIR))
 
         server_address = ('', port)
         httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
 
         log("Server started on port: {}".format(port))
-        log("Files cached at: {}".format(CACHE_DIR))
+
+        _compressed = "(compressed) " if CACHE_COMPRESS else ""
+        log("Files cached {}at: {}".format(_compressed, get_cache_dir(CACHE_DIR)))
+
         _cache_timeout = CACHE_TIMEOUT if CACHE_TIMEOUT > 0 else '∞'
         log("Timeout set at: {} seconds".format(_cache_timeout))
 
