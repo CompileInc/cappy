@@ -20,6 +20,7 @@ setup(
     version=version,
     packages=find_packages(),
     install_requires=reqs,
+    license='MIT',
     long_description="CAchingProxyinPython is a file based python proxy based on Sharebear's simple python caching proxy",
     description='A simple file based python poxy',
     keywords = ['cappy', 'proxy', 'http'],
