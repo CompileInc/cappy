@@ -1,2 +1,2 @@
 fire==0.1.0
-requests[security]==2.13.0
+requests[security]==2.14.2
