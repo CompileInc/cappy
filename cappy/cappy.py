@@ -5,9 +5,9 @@ import datetime
 import errno
 import gzip
 import os
+import SocketServer
 import sys
 import tempfile
-import time
 
 from urlparse import urlparse, ParseResult
 from datetime import timedelta
@@ -18,16 +18,18 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+
 def log(*args):
     message = "".join(args)
     message = "[CAPPY] " + message
-    sys.stdout.write(message+"\n")
+    sys.stdout.write(message + "\n")
     sys.stdout.flush()
 
 CACHE_DIR = tempfile.gettempdir()
 CACHE_DIR_NAMESPACE = "cappy"
 CACHE_TIMEOUT = 60 * 60 * 24
 CACHE_COMPRESS = False
+
 
 def get_cache_dir(cache_dir):
     return os.path.join(cache_dir, CACHE_DIR_NAMESPACE)
@@ -63,7 +65,7 @@ def split_path(path):
     return (dirname, filename)
 
 
-class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHandler):
     # Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
     def get_cache(self, parsed_url, url):
         cachepath = '{}{}'.format(parsed_url.netloc, parsed_url.path)
@@ -86,7 +88,7 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 if valid_till > now:
                     hit = True
-        
+
         fopen = gzip.open if CACHE_COMPRESS else open
 
         if hit:
@@ -108,7 +110,7 @@ class CacheHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def make_request(self, url):
         s = requests.Session()
         retries = Retry(total=3, backoff_factor=1)
-        log("Requesting "+url)
+        log("Requesting " + url)
         s.mount('http://', HTTPAdapter(max_retries=retries))
         return s.get(url)
 
@@ -172,4 +174,3 @@ def cli():
 
 if __name__ == '__main__':
     cli()
-
