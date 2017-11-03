@@ -9,7 +9,8 @@ import SocketServer
 import sys
 import tempfile
 
-from urlparse import urlparse, ParseResult
+from cgi import parse_header, parse_multipart
+from urlparse import urlparse, ParseResult, parse_qs
 from datetime import timedelta
 
 import fire
@@ -65,18 +66,30 @@ def split_path(path):
     return (dirname, filename)
 
 
+def get_hashed_filepath(stub, method, parsed_url, params):
+    hash_template = '{method}:{stub}{param_str}'
+    param_str = ''
+    if not stub:
+        stub = 'index.html'
+    if params:
+        param_str = '&'.join(['{}={}'.format(k,v) for k,v in params.items()])
+    elif method == 'GET' and parsed_url.query:
+        param_str = parsed_url.query
+    if param_str:
+        param_str = '?'+param_str
+    return hash_template.format(method=method, stub=stub, param_str=param_str)
+
+
 class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHandler):
     # Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
-    def get_cache(self, parsed_url, url):
+    def get_cache(self, parsed_url, url, params={}):
         cachepath = '{}{}'.format(parsed_url.netloc, parsed_url.path)
-        dirpath, filepath = split_path(cachepath)
+        method = self.command
+        dirpath, filepath_stub = split_path(cachepath)
         data = None
-
-        if not filepath:
-            filepath = 'index.html'
+        filepath = get_hashed_filepath(stub=filepath_stub, method=method, parsed_url=parsed_url, params=params)
 
         cache_file = os.path.join(get_cache_dir(CACHE_DIR), dirpath, filepath)
-
         hit = False
         if os.path.exists(cache_file):
             if CACHE_TIMEOUT == 0:
@@ -98,7 +111,7 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
             file_obj.close()
         else:
             log("Cache miss")
-            data = self.make_request(url=url)
+            data = self.make_request(url=url, params=params, method=method)
             # make dirs before you write to file
             dirname, _filename = split_path(cache_file)
             make_dirs(dirname)
@@ -107,12 +120,31 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
             file_obj.close()
         return data
 
-    def make_request(self, url):
+    def make_request(self, url, params={}, method='GET'):
         s = requests.Session()
         retries = Retry(total=3, backoff_factor=1)
+        req = requests.Request(method, url, data=params)
+        prepped = req.prepare()
         log("Requesting " + url)
         s.mount('http://', HTTPAdapter(max_retries=retries))
-        return s.get(url)
+        return s.send(prepped)
+
+    def _normalize_params(self, params):
+        for k, v in params.items():
+            if isinstance(v, list):
+                v_str = ','.join(v)
+                params[k] = v_str
+        return params
+
+    def get_post_params(self):
+        ctype, pdict = parse_header(self.headers['content-type'])
+        postvars = {}
+        if ctype == 'multipart/form-data':
+            postvars = parse_multipart(self.rfile, pdict)
+        elif ctype == 'application/x-www-form-urlencoded':
+            length = int(self.headers['content-length'])
+            postvars = parse_qs(self.rfile.read(length), keep_blank_values=1)
+        return self._normalize_params(postvars)
 
     def normalize_parsed_url(self, parsed_url):
         path = parsed_url.path
@@ -124,17 +156,24 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
                              fragment=parsed_url.fragment)
         return result
 
-    def do_GET(self):
+    def process_request(self, params={}):
         # cappy expects the urls to be well formed.
         # Relative urls must be handled by the application
         url = self.path.lstrip('/')
         parsed_url = self.normalize_parsed_url(urlparse(url))
         log("URL to serve: ", url)
-        data = self.get_cache(parsed_url, url)
+        data = self.get_cache(parsed_url, url, params)
         # lstrip in case you want to test it on a browser
         self.send_response(200)
         self.end_headers()
         self.wfile.writelines(data)
+
+    def do_GET(self):
+        self.process_request()
+
+    def do_POST(self):
+        params = self.get_post_params()
+        self.process_request(params)
 
 
 class CacheProxy(object):
