@@ -14,7 +14,7 @@ except ImportError:
 install_reqs = parse_requirements('requirements.txt', session=PipSession())
 reqs = [str(ir.req) for ir in install_reqs]
 sys.path.insert(0, os.path.dirname(__file__))
-version = '1.0'
+version = '1.2.1'
 setup(
     name='cappy',
     version=version,
