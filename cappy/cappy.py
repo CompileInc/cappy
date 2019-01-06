@@ -113,7 +113,7 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
             log("Cache miss")
             data = self.make_request(url=url, params=params, method=method)
             # make dirs before you write to file
-            dirname, _filename = split_path(cache_file)
+            dirname = os.path.dirname(cache_file)
             make_dirs(dirname)
             file_obj = fopen(cache_file, 'wb+')
             file_obj.writelines(data)
