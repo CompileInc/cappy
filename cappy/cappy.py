@@ -67,7 +67,7 @@ def split_path(path):
 
 
 def get_hashed_filepath(stub, method, parsed_url, params):
-    hash_template = '{method}:{stub}{param_str}'
+    hash_template = '{method}%s{stub}{param_str}' % os.sep
     param_str = ''
     if not stub:
         stub = 'index.html'
