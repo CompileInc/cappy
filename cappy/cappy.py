@@ -19,6 +19,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+from hashlib import md5
 
 def log(*args):
     message = "".join(args)
@@ -67,7 +68,6 @@ def split_path(path):
 
 
 def get_hashed_filepath(stub, method, parsed_url, params):
-    hash_template = '{method}%s{stub}{param_str}' % os.sep
     param_str = ''
     if not stub:
         stub = 'index.html'
@@ -77,7 +77,7 @@ def get_hashed_filepath(stub, method, parsed_url, params):
         param_str = parsed_url.query
     if param_str:
         param_str = '?'+param_str
-    return hash_template.format(method=method, stub=stub, param_str=param_str)
+    return md5(method + stub + param_str).hexdigest()
 
 
 class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHandler):
