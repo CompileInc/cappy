@@ -56,10 +56,10 @@ def split_path(path):
         last_fragment = split_path[-1]
         if '.' not in last_fragment:
             filename = ''
-            dirname = os.sep.join(split_path)
+            dirname = os.path.join(*split_path)
         else:
             filename = last_fragment
-            dirname = os.sep.join(split_path[:-1])
+            dirname = os.path.join(*split_path[:-1])
     else:
         filename = ''
         dirname = path
