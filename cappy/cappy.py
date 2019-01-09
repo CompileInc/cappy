@@ -19,6 +19,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+from hashlib import md5
+from re import compile
 
 def log(*args):
     message = "".join(args)
@@ -56,10 +58,10 @@ def split_path(path):
         last_fragment = split_path[-1]
         if '.' not in last_fragment:
             filename = ''
-            dirname = path
+            dirname = os.path.join(*split_path)
         else:
             filename = last_fragment
-            dirname = '/'.join(split_path[:-1])
+            dirname = os.path.join(*split_path[:-1])
     else:
         filename = ''
         dirname = path
@@ -67,7 +69,6 @@ def split_path(path):
 
 
 def get_hashed_filepath(stub, method, parsed_url, params):
-    hash_template = '{method}:{stub}{param_str}'
     param_str = ''
     if not stub:
         stub = 'index.html'
@@ -77,8 +78,10 @@ def get_hashed_filepath(stub, method, parsed_url, params):
         param_str = parsed_url.query
     if param_str:
         param_str = '?'+param_str
-    return hash_template.format(method=method, stub=stub, param_str=param_str)
+    return md5(method + stub + param_str).hexdigest()
 
+
+FORBIDDEN = compile('[<>:"|?*]')
 
 class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHandler):
     # Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
@@ -89,7 +92,10 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
         data = None
         filepath = get_hashed_filepath(stub=filepath_stub, method=method, parsed_url=parsed_url, params=params)
 
-        cache_file = os.path.join(get_cache_dir(CACHE_DIR), dirpath, filepath)
+        # replace characters forbidden by file system with `_`
+        clean_dirpath = FORBIDDEN.sub('_', dirpath)
+
+        cache_file = os.path.join(get_cache_dir(CACHE_DIR), clean_dirpath, filepath)
         hit = False
         if os.path.exists(cache_file):
             if CACHE_TIMEOUT == 0:
@@ -113,7 +119,7 @@ class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHa
             log("Cache miss")
             data = self.make_request(url=url, params=params, method=method)
             # make dirs before you write to file
-            dirname, _filename = split_path(cache_file)
+            dirname = os.path.dirname(cache_file)
             make_dirs(dirname)
             file_obj = fopen(cache_file, 'wb+')
             file_obj.writelines(data)
