@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import BaseHTTPServer
+from __future__ import absolute_import
+import six.moves.BaseHTTPServer
 import datetime
 import errno
 import gzip
 import os
-import SocketServer
+import six.moves.socketserver
 import sys
 import tempfile
 
 from cgi import parse_header, parse_multipart
-from urlparse import urlparse, ParseResult, parse_qs
+from six.moves.urllib.parse import urlparse, ParseResult, parse_qs
 from datetime import timedelta
 
 import fire
@@ -80,7 +81,7 @@ def get_hashed_filepath(stub, method, parsed_url, params):
     return hash_template.format(method=method, stub=stub, param_str=param_str)
 
 
-class CacheHandler(SocketServer.ThreadingMixIn, BaseHTTPServer.BaseHTTPRequestHandler):
+class CacheHandler(six.moves.socketserver.ThreadingMixIn, six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
     # Based on http://sharebear.co.uk/blog/2009/09/17/very-simple-python-caching-proxy/
     def get_cache(self, parsed_url, url, params={}):
         cachepath = '{}{}'.format(parsed_url.netloc, parsed_url.path)
@@ -195,7 +196,7 @@ class CacheProxy(object):
             make_dirs(get_cache_dir(CACHE_DIR))
 
         server_address = ('', port)
-        httpd = BaseHTTPServer.HTTPServer(server_address, CacheHandler)
+        httpd = six.moves.BaseHTTPServer.HTTPServer(server_address, CacheHandler)
 
         log("Server started on port: {}".format(port))
 
