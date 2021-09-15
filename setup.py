@@ -34,7 +34,7 @@ except AttributeError:
     requirements = [str(ir.requirement) for ir in install_reqs]
 
 sys.path.insert(0, os.path.dirname(__file__))
-version = '1.2.2'
+version = '1.2.3'
 setup(
     name='cappy',
     version=version,
