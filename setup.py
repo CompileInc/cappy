@@ -8,10 +8,15 @@ except ImportError:
     # pip < 10
     from pip.req import parse_requirements
 try:
-    from pip._internal.download import PipSession
+    from pip._internal.network.session import PipSession
 except ImportError:
-    # pip < 10
-    from pip.download import PipSession
+    try:
+        from pip._internal.download import PipSession
+    except ImportError:
+        # pip < 10
+        from pip.download import PipSession
+
+
 from setuptools import find_packages
 
 try:
@@ -19,16 +24,22 @@ try:
 except ImportError:
     from distutils.core import setup
 
+
 # reading requirements
 install_reqs = parse_requirements('requirements.txt', session=PipSession())
-reqs = [str(ir.req) for ir in install_reqs]
+try:
+    requirements = [str(ir.req) for ir in install_reqs]
+except AttributeError:
+    # pip > 20
+    requirements = [str(ir.requirement) for ir in install_reqs]
+
 sys.path.insert(0, os.path.dirname(__file__))
 version = '1.2.2'
 setup(
     name='cappy',
     version=version,
     packages=find_packages(),
-    install_requires=reqs,
+    install_requires=requirements,
     license='MIT',
     long_description="CAchingProxyinPython is a file based python proxy based on Sharebear's simple python caching proxy",
     description='A simple file based python poxy',
