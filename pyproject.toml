@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cappy"
+dynamic = ["version"]
+description = "CAchingProxyinPython is a file based python proxy based on Sharebear's simple python caching proxy"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE.md" }
+authors = [{ name = "Compile Inc", email = "dev@compile.com" }]
+keywords = ["cappy", "proxy", "http", "cache"]
+requires-python = ">=3.8"
+dependencies = [
+  "fire>=0.1",
+  "requests[security]>=2.18",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Internet :: Proxy Servers",
+]
+
+[project.urls]
+Homepage = "https://github.com/CompileInc/cappy"
+Repository = "https://github.com/CompileInc/cappy"
+Issues = "https://github.com/CompileInc/cappy/issues"
+
+[project.scripts]
+cappy = "cappy.cappy:cli"
+
+[tool.hatch.version]
+path = "cappy/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cappy"]
+
+[tool.hatch.publish.targets.testpypi]
+url = "https://test.pypi.org/project/cappy/"
+
+[tool.hatch.publish.targets.pypi]
+url = "https://pypi.org/project/cappy/"
